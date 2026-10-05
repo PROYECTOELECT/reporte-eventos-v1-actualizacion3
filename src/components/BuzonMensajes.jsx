@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { listarUsuarios, contactosBuzon, sincronizarUsuariosNube } from '../lib/usuarios'
+import { listarUsuarios, contactosBuzon, sincronizarUsuariosNube, refrescarSesionDesdeStorage } from '../lib/usuarios'
+import { supabase } from '../lib/supabase'
 import {
   enviarMensaje,
   conversacion,
@@ -44,15 +45,21 @@ function BuzonMensajes({ sesion, abierto, onCerrar, destinatarioInicial, onMensa
     if (!abierto) return
     let vivo = true
     const pull = async () => {
-      await sincronizarUsuariosNube().catch(() => {})
+      const lista = await sincronizarUsuariosNube().catch(() => listarUsuarios())
       await sincronizarMensajesNube().catch(() => {})
       if (!vivo) return
-      setUsuarios(contactosBuzon(sesion))
+      const sesionViva = refrescarSesionDesdeStorage() || sesion
+      setUsuarios(contactosBuzon(sesionViva, lista))
       setTick(t => t + 1)
     }
     pull()
     const id = setInterval(pull, 4000)
-    return () => { vivo = false; clearInterval(id) }
+    const canal = supabase
+      .channel('buzon-usuarios-' + sesion.id)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'usuarios_app' }, () => { pull() })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'mensajes_app' }, () => { pull() })
+      .subscribe()
+    return () => { vivo = false; clearInterval(id); supabase.removeChannel(canal) }
   }, [abierto, sesion?.id])
 
   useEffect(() => {
