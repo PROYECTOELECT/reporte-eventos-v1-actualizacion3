@@ -33,6 +33,7 @@ function BuzonMensajes({ sesion, abierto, onCerrar, destinatarioInicial, onMensa
   const [texto, setTexto] = useState('')
   const [tick, setTick] = useState(0)
   const [aviso, setAviso] = useState('')
+  const [error, setError] = useState('')
   const listaRef = useRef(null)
 
   const recargar = () => {
@@ -74,7 +75,6 @@ function BuzonMensajes({ sesion, abierto, onCerrar, destinatarioInicial, onMensa
 
     // Actualizar conversación cada 2s para recibir mensajes nuevos
     const id = setInterval(() => {
-      setUsuarios(contactosBuzon(sesion))
       setTick(t => t + 1)
       if (typeof onMensajeRespondido === 'function') onMensajeRespondido()
     }, 2000)
@@ -220,7 +220,7 @@ function BuzonMensajes({ sesion, abierto, onCerrar, destinatarioInicial, onMensa
     <div className="modal-overlay" onClick={onCerrar}>
       <div className="modal-contenido buzon-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>📨 Buzón de mensajes · v5</h2>
+          <h2>📨 Buzón de mensajes · v6</h2>
           <button type="button" className="modal-cerrar" onClick={onCerrar}>×</button>
         </div>
         <div className="modal-body buzon-body">
@@ -245,7 +245,7 @@ function BuzonMensajes({ sesion, abierto, onCerrar, destinatarioInicial, onMensa
                     if (typeof onMensajeRespondido === 'function') onMensajeRespondido()
                   }}
                 >
-                  <img src={u.foto} alt="" className="usuario-foto" style={{ width: 36, height: 36 }} />
+                  <img src={u.foto || ''} alt="" className="usuario-foto" style={{ width: 36, height: 36, background: '#e2e8f0' }} />
                   <span>
                     {u.nombre}
                     {unread > 0 && <em className="badge-msg">{unread}</em>}
