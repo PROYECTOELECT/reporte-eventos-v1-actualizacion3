@@ -545,27 +545,35 @@ export function eliminarUsuario(id, actor) {
   return true
 }
 
-export function contactosBuzon(sesion) {
+export function contactosBuzon(sesion, fuente) {
   if (!sesion) return []
-  const todos = listarUsuarios().filter((u) => u.activo !== false && String(u.id) !== String(sesion.id))
+  const base = Array.isArray(fuente) && fuente.length ? fuente : listarUsuarios()
+  const norm = (s) => String(s || '').trim().toLowerCase()
+  const todos = base.filter((u) => u.activo !== false && String(u.id) !== String(sesion.id))
   const rol = rolDe(sesion)
   if (rol === ROL_ADMIN) return todos
   if (rol === ROL_MASTER) {
+    const nombreMaster = norm(sesion.nombre)
     return todos.filter((u) => {
       const r = rolDe(u)
       if (r === ROL_ADMIN) return true
-      if (r === ROL_GENERAL && String(u.masterId) === String(sesion.id)) return true
-      if (r === ROL_GENERAL && (u.masterNombre || '').trim().toLowerCase() === (sesion.nombre || '').trim().toLowerCase()) return true
-      return false
+      if (r !== ROL_GENERAL) return false
+      return String(u.masterId || '') === String(sesion.id) || norm(u.masterNombre) === nombreMaster
     })
   }
-  const mid = sesion.masterId
-  const mn = (sesion.masterNombre || '').trim().toLowerCase()
+  const nombreMaster = norm(sesion.masterNombre)
+  const master = base.find((u) => {
+    if (sesion.masterId && String(u.id) === String(sesion.masterId)) return true
+    return nombreMaster && rolDe(u) === ROL_MASTER && norm(u.nombre) === nombreMaster
+  })
+  const mid = sesion.masterId || master?.id || ''
+  const mn = nombreMaster || norm(master?.nombre)
   return todos.filter((u) => {
     if (mid && String(u.id) === String(mid)) return true
-    if (mn && rolDe(u) === ROL_MASTER && (u.nombre || '').trim().toLowerCase() === mn) return true
-    if (rolDe(u) === ROL_GENERAL && mid && String(u.masterId) === String(mid)) return true
-    if (rolDe(u) === ROL_GENERAL && mn && (u.masterNombre || '').trim().toLowerCase() === mn) return true
+    if (mn && rolDe(u) === ROL_MASTER && norm(u.nombre) === mn) return true
+    if (rolDe(u) !== ROL_GENERAL) return false
+    if (mid && String(u.masterId || '') === String(mid)) return true
+    if (mn && norm(u.masterNombre) === mn) return true
     return false
   })
 }
@@ -724,7 +732,18 @@ export async function sincronizarUsuariosNube() {
     }
   })
   if (lista.length > 0) {
-    guardarUsuarios(lista)
+    const liviana = lista.map((u) => ({
+      ...u,
+      foto: u.foto && String(u.foto).length > 80000 ? '' : u.foto,
+      logoMarca: u.logoMarca && String(u.logoMarca).length > 80000 ? null : u.logoMarca
+    }))
+    try {
+      guardarUsuarios(liviana)
+    } catch (_) {
+      try {
+        guardarUsuarios(liviana.map((u) => ({ ...u, foto: '', logoMarca: null })))
+      } catch (__) {}
+    }
   }
   return lista
 }
