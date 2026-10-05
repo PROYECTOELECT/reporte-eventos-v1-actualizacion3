@@ -708,6 +708,38 @@ export function fechaIngresoDe(u) {
   return v || 'N/D'
 }
 
+export async function listarContactosEquipoNube(sesion) {
+  if (!sesion) return []
+  const { data, error } = await supabase
+    .from(TABLA_USUARIOS)
+    .select('id,nombre,cedula,cargo,rol,activo,master_id,master_nombre')
+  if (error) {
+    console.warn('contactos nube:', error.message)
+    return contactosBuzon(sesion)
+  }
+  const lista = (data || []).map((row) => ({
+    id: row.id,
+    nombre: row.nombre || '',
+    cedula: row.cedula || '',
+    cargo: row.cargo || '',
+    rol: row.rol || 'general',
+    esMaster: row.rol === 'admin' || row.rol === 'master',
+    activo: row.activo !== false,
+    masterId: row.master_id || null,
+    masterNombre: row.master_nombre || '',
+    foto: ''
+  }))
+  const yo = lista.find((u) => String(u.id) === String(sesion.id))
+  const sesionEquipo = {
+    ...sesion,
+    rol: yo?.rol || sesion.rol,
+    masterId: yo?.masterId || sesion.masterId || null,
+    masterNombre: yo?.masterNombre || sesion.masterNombre || '',
+    nombre: yo?.nombre || sesion.nombre
+  }
+  return contactosBuzon(sesionEquipo, lista)
+}
+
 export async function sincronizarUsuariosNube() {
   const { data, error } = await supabase.from(TABLA_USUARIOS).select('*').order('created_at', { ascending: true })
   if (error) {
