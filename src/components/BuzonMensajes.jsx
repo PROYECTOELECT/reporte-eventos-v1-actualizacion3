@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { listarUsuarios, contactosBuzon, sincronizarUsuariosNube, refrescarSesionDesdeStorage } from '../lib/usuarios'
+import { listarUsuarios, contactosBuzon, listarContactosEquipoNube, refrescarSesionDesdeStorage } from '../lib/usuarios'
 import { supabase } from '../lib/supabase'
 import {
   enviarMensaje,
@@ -32,7 +32,7 @@ function BuzonMensajes({ sesion, abierto, onCerrar, destinatarioInicial, onMensa
   const [destinatarioId, setDestinatarioId] = useState('')
   const [texto, setTexto] = useState('')
   const [tick, setTick] = useState(0)
-  const [error, setError] = useState('')
+  const [aviso, setAviso] = useState('')
   const listaRef = useRef(null)
 
   const recargar = () => {
@@ -45,11 +45,16 @@ function BuzonMensajes({ sesion, abierto, onCerrar, destinatarioInicial, onMensa
     if (!abierto) return
     let vivo = true
     const pull = async () => {
-      const lista = await sincronizarUsuariosNube().catch(() => listarUsuarios())
+      const remotos = await listarContactosEquipoNube(sesion).catch(() => [])
       await sincronizarMensajesNube().catch(() => {})
       if (!vivo) return
       const sesionViva = refrescarSesionDesdeStorage() || sesion
-      setUsuarios(contactosBuzon(sesionViva, lista))
+      const locales = contactosBuzon(sesionViva)
+      const porId = new Map()
+      ;[...remotos, ...locales].forEach((u) => { if (u?.id) porId.set(String(u.id), { ...porId.get(String(u.id)), ...u }) })
+      const lista = [...porId.values()]
+      setUsuarios(lista)
+      setAviso(lista.length ? '' : 'No llegaron usuarios del equipo. Revisa la conexión y vuelve a abrir el buzón.')
       setTick(t => t + 1)
     }
     pull()
@@ -215,7 +220,7 @@ function BuzonMensajes({ sesion, abierto, onCerrar, destinatarioInicial, onMensa
     <div className="modal-overlay" onClick={onCerrar}>
       <div className="modal-contenido buzon-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>📨 Buzón de mensajes · v4</h2>
+          <h2>📨 Buzón de mensajes · v5</h2>
           <button type="button" className="modal-cerrar" onClick={onCerrar}>×</button>
         </div>
         <div className="modal-body buzon-body">
@@ -223,7 +228,7 @@ function BuzonMensajes({ sesion, abierto, onCerrar, destinatarioInicial, onMensa
             <p className="buzon-label">Usuarios</p>
             {usuarios.length === 0 && (
               <p className="empty-state" style={{ padding: 8 }}>
-                No hay otros usuarios. Registra otra cuenta para probar mensajes.
+                {aviso || 'No hay otros usuarios del mismo master.'}
               </p>
             )}
             {usuarios.map(u => {
