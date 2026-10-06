@@ -90,6 +90,7 @@ function App() {
   const [mapaTipoFiltro, setMapaTipoFiltro] = useState('')
   const [mapaUsuarioId, setMapaUsuarioId] = useState('')
   const [verComparativo, setVerComparativo] = useState(false)
+  const [ocultarPuntosMapa, setOcultarPuntosMapa] = useState(false)
   const [usuarioExport, setUsuarioExport] = useState('')
   const [incluirMapaPDF, setIncluirMapaPDF] = useState(false)
   const [exportandoMapa, setExportandoMapa] = useState(false)
@@ -1120,6 +1121,11 @@ function App() {
                 {verComparativo ? 'Ocultar comparativo' : 'Ver rendimiento del equipo'}
               </button>
             )}
+            {esMaster && (
+              <button type="button" className="btn btn-secondary" style={{ width: 'auto', padding: '8px 14px', fontSize: '0.85rem' }} onClick={() => setOcultarPuntosMapa((v) => !v)}>
+                {ocultarPuntosMapa ? 'Ver puntos de registro' : 'Ocultar puntos y ver usuarios'}
+              </button>
+            )}
           </div>
 
           <div ref={mapaRef} className="mapa-export-area">
@@ -1156,7 +1162,7 @@ function App() {
             )}
             <div className="mapa-container">
               <MapaReportes
-                reportes={reportesParaMapa}
+                reportes={ocultarPuntosMapa ? [] : reportesParaMapa}
                 ubicacionSeleccionada={ubicacionSeleccionada}
                 onSeleccionarUbicacion={setUbicacionSeleccionada}
                 reporteSeleccionado={reporteSeleccionado}
