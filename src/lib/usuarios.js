@@ -119,7 +119,7 @@ export function guardarUsuarios(lista) {
   } catch (e) {
     const liviana = (lista || []).map((u) => ({
       ...u,
-      foto: u.foto && String(u.foto).length > 60000 ? '' : u.foto,
+      foto: u.foto && String(u.foto).length > 180000 ? '' : u.foto,
       logoMarca: u.logoMarca && String(u.logoMarca).length > 60000 ? null : u.logoMarca
     }))
     try {
@@ -234,6 +234,28 @@ export function buscarMasterPorNombre(nombre) {
   return listarMasters().find((m) => String(m.nombre).trim().toLowerCase() === q) || null
 }
 
+export function comprimirFoto(dataUrl) {
+  return new Promise((resolve) => {
+    const original = String(dataUrl || '')
+    if (!original.startsWith('data:image') || original.length < 50000) {
+      resolve(original)
+      return
+    }
+    const img = new Image()
+    img.onload = () => {
+      const max = 320
+      const escala = Math.min(1, max / Math.max(img.width, img.height))
+      const canvas = document.createElement('canvas')
+      canvas.width = Math.max(1, Math.round(img.width * escala))
+      canvas.height = Math.max(1, Math.round(img.height * escala))
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height)
+      resolve(canvas.toDataURL('image/jpeg', 0.68))
+    }
+    img.onerror = () => resolve(original)
+    img.src = original
+  })
+}
+
 export async function crearUsuario({
   nombre,
   cedula,
@@ -255,6 +277,7 @@ export async function crearUsuario({
   if (!nombre?.trim()) throw new Error('El nombre es obligatorio')
   if (!ced) throw new Error('La cédula es obligatoria')
   if (!foto) throw new Error('La foto es obligatoria')
+  const fotoLista = await comprimirFoto(foto)
   const pol = validarPasswordPolitica(password)
   if (pol) throw new Error(pol)
   if (usuarios.some((u) => u.cedula === ced)) {
@@ -294,7 +317,7 @@ export async function crearUsuario({
     nombre: nombre.trim(),
     cedula: ced,
     cargo: (cargo || '').trim(),
-    foto,
+    foto: fotoLista,
     passwordHash,
     rol: rolFinal,
     esMaster: rolFinal === ROL_ADMIN || rolFinal === ROL_MASTER,
@@ -331,13 +354,14 @@ export function puedeGestionarUsuario(actor, objetivo) {
   return false
 }
 
-export function actualizarUsuario(id, cambios) {
+export async function actualizarUsuario(id, cambios) {
   const usuarios = listarUsuarios()
   const idx = usuarios.findIndex((u) => u.id === id)
   if (idx < 0) throw new Error('Usuario no encontrado')
   const seguro = { ...cambios }
   delete seguro.password
   delete seguro.passwordHash
+  if (seguro.foto) seguro.foto = await comprimirFoto(seguro.foto)
   usuarios[idx] = { ...usuarios[idx], ...seguro }
   guardarUsuarios(usuarios)
   guardarUsuarioNube(usuarios[idx]).catch((err) => console.warn(err.message))
@@ -759,21 +783,16 @@ export async function sincronizarUsuariosNube() {
       cupoGenerales: cupoNube > 0 ? cupoNube : cupoLocal,
       permisos: (nube.permisos && Object.keys(nube.permisos).length) ? nube.permisos : (local.permisos || {}),
       tituloInforme: nube.tituloInforme || local.tituloInforme || '',
-      foto: nube.foto || local.foto,
+      foto: nube.foto || local.foto || '',
       logoMarca: nube.logoMarca || local.logoMarca
     }
   })
   if (lista.length > 0) {
-    const liviana = lista.map((u) => ({
-      ...u,
-      foto: u.foto && String(u.foto).length > 80000 ? '' : u.foto,
-      logoMarca: u.logoMarca && String(u.logoMarca).length > 80000 ? null : u.logoMarca
-    }))
     try {
-      guardarUsuarios(liviana)
+      guardarUsuarios(lista)
     } catch (_) {
       try {
-        guardarUsuarios(liviana.map((u) => ({ ...u, foto: '', logoMarca: null })))
+        guardarUsuarios(lista.map((u) => ({ ...u, logoMarca: null })))
       } catch (__) {}
     }
   }
@@ -821,7 +840,8 @@ export async function hayUsuariosEnNube() {
 }
 
 export async function guardarUsuarioNube(usuario) {
-  const fila = usuarioAFila(usuario)
+  const foto = await comprimirFoto(usuario.foto)
+  const fila = usuarioAFila({ ...usuario, foto })
   let { error } = await supabase.from(TABLA_USUARIOS).upsert(fila, { onConflict: 'id' })
   if (error && /titulo_informe|cupo_generales|permisos|ultima_lat|ultima_lng|column/i.test(error.message || '')) {
     const { titulo_informe, cupo_generales, permisos, ultima_lat, ultima_lng, ...basica } = fila
