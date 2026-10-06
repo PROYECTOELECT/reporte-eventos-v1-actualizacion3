@@ -30,7 +30,7 @@ export default function PanelComparativo({ grupos, periodo, titulo, logoMarca, o
                 <div className="comparativo-ficha">
                   {u.foto ? <img src={u.foto} alt="" /> : <div className="comparativo-sinfoto">Sin foto</div>}
                   <div>
-                    <strong>{u.nombre}</strong>
+                    <strong style={{ color: '#0f172a', fontSize: '0.95rem', fontWeight: 800, lineHeight: 1.25, display: 'block' }}>{u.nombre}</strong>
                     <p>CC {u.cedula} · {u.cargo || 'Sin cargo'}</p>
                     <p>{u.rol === 'master' ? 'Master' : u.rol === 'admin' ? 'Administrador' : 'General'} · Ingreso: {u.ingreso || 'N/D'}</p>
                     <p>Master: {u.masterNombre}</p>
