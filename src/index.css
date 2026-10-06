@@ -1537,7 +1537,8 @@ body[data-estilo="cristal"] .banner h1 {
 .comparativo-head p, .comparativo-meta { margin: 4px 0 0; color: #6b7280; font-size: 0.82rem; }
 .comparativo-acciones .btn { width: auto; padding: 8px 12px; font-size: 0.82rem; }
 .comparativo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
-.comparativo-card { background: #fff; border: 1px solid #dbeafe; border-radius: 12px; padding: 10px; }
+.comparativo-card { background: #fff; border: 1px solid #dbeafe; border-radius: 12px; padding: 10px; color: #0f172a; }
+.comparativo-ficha strong { color: #0f172a; font-size: 0.95rem; font-weight: 800; }
 .comparativo-ficha { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; }
 .comparativo-ficha img, .comparativo-sinfoto {
   width: 56px; height: 56px; border-radius: 50%; object-fit: cover; border: 2px solid #93c5fd; flex-shrink: 0;
