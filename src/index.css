@@ -653,12 +653,13 @@ body {
   margin-bottom: 12px;
 }
 
-.usuario-foto {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid #22c55e;
+.usuario-foto-vacia {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-weight: 700;
 }
 
 .usuario-estado {
