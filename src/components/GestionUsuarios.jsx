@@ -357,7 +357,7 @@ function GestionUsuarios({ sesion, onUsuariosChange, puedeCrearGenerales = true,
           <div className="lista-usuarios">
             {pendientes.map(u => (
               <div key={u.id} className="usuario-item" style={{ borderColor: '#f59e0b', background: '#fffbeb' }}>
-                <img src={u.foto} alt={u.nombre} className="usuario-foto" />
+                {u.foto ? <img src={u.foto} alt="" className="usuario-foto" /> : <span className="usuario-foto usuario-foto-vacia">{(u.nombre || '?').slice(0, 1)}</span>}
                 <div className="usuario-item-info">
                   <strong>{u.nombre}</strong>
                   <p>CC {u.cedula} · {u.cargo || 'Sin cargo'}</p>
@@ -384,7 +384,7 @@ function GestionUsuarios({ sesion, onUsuariosChange, puedeCrearGenerales = true,
         {habilitados.map(u => (
           <div key={u.id} className="usuario-item usuario-item-col">
             <div className="usuario-item-fila">
-            <img src={u.foto} alt={u.nombre} className="usuario-foto" />
+            {u.foto ? <img src={u.foto} alt="" className="usuario-foto" /> : <span className="usuario-foto usuario-foto-vacia">{(u.nombre || '?').slice(0, 1)}</span>}
             <div className="usuario-item-info">
               <strong>{u.nombre}</strong>
               <p>CC {u.cedula} · {u.cargo || 'Sin cargo'}</p>
